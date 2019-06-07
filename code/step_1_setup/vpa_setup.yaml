@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Metadata:
+  License: Apache-2.0
+Description: 'AWS CloudFormation Template to create the IAM roles and DynamoDB table needed for the workshop.'
+Parameters:
+  DDBReadCapacityUnits:
+    Description: Provisioned read throughput
+    Type: Number
+    Default: '5'
+    MinValue: '1'
+    MaxValue: '10'
+    ConstraintDescription: Must be between 1 and 10
+  DDBWriteCapacityUnits:
+    Description: Provisioned write throughput
+    Type: Number
+    Default: '5'
+    MinValue: '1'
+    MaxValue: '10'
+    ConstraintDescription: Must be between 1 and 10
+Resources:
+  VPAMetricsTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: metric
+          AttributeType: S
+      KeySchema:
+        - AttributeName: metric
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref 'DDBReadCapacityUnits'
+        WriteCapacityUnits: !Ref 'DDBWriteCapacityUnits'
+      TableName: VPA_Metrics_Table
+  AlexaMetricSkill:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      Handler: vpa_alexa_skill.lambda_handler
+      Runtime: python3.6
+      Timeout: 60
+      CodeUri: s3://aws-vpa-tweets-euw1/setup/vpa_alexa_skill_p.zip
+      Role:  !Sub "arn:aws:iam::${AWS::AccountId}:role/VPALambdaAlexaSkillRole"
+      Environment:
+          Variables:
+            slot_name: metric
+            intent_name: WhatsMyMetric
+            greeting_msg: Welcome to the Voice Powered Analytics.  Please tell me what metrics you'd like to hear. To hear available metrics, ask Alexa tell me my metrics
+            metrics_table: VPA_Metrics_Table
+            exit_msg: Thank you for trying the Voice Powered Analytics.  Have a nice day!
+  AthenaOutputS3Bucket:
+    Type: AWS::S3::Bucket
+  ScheduledRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Name: VPAEvery5Min
+      Description: "Every5Minutes"
+      ScheduleExpression: "rate(5 minutes)"
+      State: "ENABLED"
+Outputs:
+  TableName:
+    Value: !Ref 'VPAMetricsTable'
+    Description: VPA Metrics Table Name
+  BucketName:
+    Value: !Ref 'AthenaOutputS3Bucket'
+    Description: Name of S3 bucket to hold Athena query results
+  CWEEvery5Min:
+    Value: !Ref 'ScheduledRule'
+    Description: Name of the CloudWatch Event Rule
