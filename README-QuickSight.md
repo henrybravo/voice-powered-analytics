@@ -121,7 +121,7 @@ Let's explore:
 **Import Permissions note** 
 1. Launch the [QuickSight portal](https://eu-west-1.quicksight.aws.amazon.com/).  
 1. If haven't already configured, Quicksight may need special permissions to access Athena:   
-a. In the upper right corner, right of the *region* in the upper right corner, choose your profile name, and from the dropdown menu, choose *Manage Quicksight*.    
+a. (These settings can only be changed in the N.Virginia region) In the upper right corner, ensure US East N. Virginia is selected, then to the right of the region in the upper right corner, choose your profile name, and from the dropdown menu, choose Manage Quicksight.
 b. On the left menu, click *Account Settings*  
 c. Under **QuickSight access to AWS services** click the *Add or remove* button  
 d. In the next screen **Edit QuickSight read-only access to AWS resources** ensure the box *Amazon Athena* is checked   
