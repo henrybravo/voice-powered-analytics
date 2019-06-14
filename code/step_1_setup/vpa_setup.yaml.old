@@ -32,34 +32,6 @@ Resources:
         ReadCapacityUnits: !Ref 'DDBReadCapacityUnits'
         WriteCapacityUnits: !Ref 'DDBWriteCapacityUnits'
       TableName: VPA_Metrics_Table
-  VPALambdaAthenaPollerRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: VPALambdaAthenaPollerRole
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-             - lambda.amazonaws.com
-          Action:
-            - sts:AssumeRole
-      Path: "/"
-  VPALambdaAlexaSkillRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: VPALambdaAlexaSkillRole
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-             - lambda.amazonaws.com
-          Action:
-            - sts:AssumeRole
-      Path: "/"
   AlexaMetricSkill:
     Type: "AWS::Serverless::Function"
     Properties:
@@ -67,7 +39,7 @@ Resources:
       Runtime: python3.6
       Timeout: 60
       CodeUri: s3://aws-vpa-tweets-euw1/setup/vpa_alexa_skill_p.zip
-      Role: !GetAtt VPALambdaAlexaSkillRole.Arn
+      Role:  !Sub "arn:aws:iam::${AWS::AccountId}:role/VPALambdaAlexaSkillRole"
       Environment:
           Variables:
             slot_name: metric
@@ -75,30 +47,6 @@ Resources:
             greeting_msg: Welcome to the Voice Powered Analytics.  Please tell me what metrics you'd like to hear. To hear available metrics, ask Alexa tell me my metrics
             metrics_table: VPA_Metrics_Table
             exit_msg: Thank you for trying the Voice Powered Analytics.  Have a nice day!
-  AthenaPollerPolicies:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: AthenaPollerPolicy
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action: ['logs:*', 's3:*', 'dynamodb:*', 'athena:*', 'xray:*', 'glue:*']
-          Resource: '*'
-      Roles:
-        -
-          Ref: "VPALambdaAthenaPollerRole"
-  AlexaSkillPolicies:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: AlexaSkillPolicy
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action: ['logs:*', 'dynamodb:scan', 'dynamodb:GetItem', 'xray:*']
-          Resource: '*'
-      Roles:
-        -
-          Ref: "VPALambdaAlexaSkillRole"
   AthenaOutputS3Bucket:
     Type: AWS::S3::Bucket
   ScheduledRule:
@@ -115,12 +63,6 @@ Outputs:
   BucketName:
     Value: !Ref 'AthenaOutputS3Bucket'
     Description: Name of S3 bucket to hold Athena query results
-  AthenaPollerRole:
-    Value: !Ref 'VPALambdaAthenaPollerRole'
-    Description: Name of the IAM Role for the Lambda polling Athena
-  AlexaSkillRole:
-    Value: !Ref 'VPALambdaAlexaSkillRole'
-    Description: Name of the IAM Role for the Lambda used by Alexa
   CWEEvery5Min:
     Value: !Ref 'ScheduledRule'
     Description: Name of the CloudWatch Event Rule
